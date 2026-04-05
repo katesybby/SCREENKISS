@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SCREENKISS</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="site-shell">
+    <header class="hero">
+      <div class="marquee-glow"></div>
+
+      <div class="hero-top">
+        <p class="tiny-label">CURATED CINEMA ARCHIVE</p>
+        <h1>SCREENKISS</h1>
+        <p class="hero-sub">
+            <p class="hero-sub">
+                pink neon cinema, unwell masterpieces, chaotic excellent taste
+            </p>
+        </p>
+      </div>
+
+      <section class="favorites-section">
+        <div class="section-head">
+          <h2>Featured Favorites</h2>
+          <p>the permanent main character shelf</p>
+        </div>
+        <div id="favoritesRow" class="favorites-row"></div>
+      </section>
+    </header>
+
+    <main class="main-layout">
+      <nav class="top-tabs" id="topTabs">
+        <button class="top-tab active" data-type="all">All</button>
+        <button class="top-tab" data-type="movie">Movies</button>
+        <button class="top-tab" data-type="show">TV Shows</button>
+        <button class="top-tab" data-type="anime">Anime</button>
+      </nav>
+
+      <section class="controls-panel">
+        <div class="control-group search-group">
+          <label for="searchInput">Search</label>
+          <input id="searchInput" type="text" placeholder="title, vibe, hint..." />
+        </div>
+
+        <div class="control-group">
+          <label for="vibeSelect">Vibe</label>
+          <select id="vibeSelect">
+            <option value="all">All vibes</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="sortSelect">Sort</label>
+          <select id="sortSelect">
+            <option value="title-asc">Title A–Z</option>
+            <option value="title-desc">Title Z–A</option>
+            <option value="year-desc">Newest</option>
+            <option value="year-asc">Oldest</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="favoritesOnly">Focus</label>
+          <select id="favoritesOnly">
+            <option value="all">Everything</option>
+            <option value="favorites">Favorites only</option>
+          </select>
+        </div>
+
+        <div class="control-actions">
+          <button id="clearFiltersBtn" class="secondary-btn">Clear Filters</button>
+          <button id="randomPickBtn" class="primary-btn">Pick for Me</button>
+        </div>
+      </section>
+
+      <section class="results-header">
+        <div>
+          <h2 id="resultsTitle">All Titles</h2>
+          <p id="resultsMeta">0 titles</p>
+        </div>
+      </section>
+
+      <section id="cardGrid" class="card-grid"></section>
+    </main>
+  </div>
+
+  <div id="detailsModal" class="modal hidden">
+    <div id="modalBackdrop" class="modal-backdrop"></div>
+    <div class="modal-card">
+      <button id="closeModalBtn" class="modal-close">×</button>
+      <div id="modalBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
