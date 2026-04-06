@@ -7,6 +7,16 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div id="movieModeOverlay" class="movie-mode-overlay hidden" aria-hidden="true">
+    <div class="curtain curtain-left"></div>
+    <div class="curtain curtain-right"></div>
+    <div class="bulb-strip bulb-strip-left"></div>
+    <div class="bulb-strip bulb-strip-right"></div>
+  </div>
+
+  <div class="bg-decor decor-dots"></div>
+  <div class="bg-decor decor-stars"></div>
+
   <div class="site-shell">
     <header class="hero">
       <div class="hero-topbar">
@@ -17,7 +27,9 @@
         </div>
 
         <div class="top-actions">
-          <button id="themeToggleBtn" class="theme-toggle">Light Mode</button>
+          <button id="lightDarkToggleBtn" class="theme-toggle">Light Mode</button>
+          <button id="movieTimeBtn" class="theme-toggle movie-time-btn">Movie Time</button>
+          <button id="loginBtn" class="theme-toggle login-btn">Log In</button>
         </div>
       </div>
 
@@ -27,25 +39,32 @@
           <div id="featuredDisplay" class="featured-display"></div>
           <button id="featuredNextBtn" class="carousel-arrow right" aria-label="Next featured">›</button>
         </div>
+
+        <div class="featured-bottom-actions">
+          <button class="secondary-btn" id="featuredOpenBtnExternal" type="button">Open Details</button>
+          <button class="primary-btn" id="featuredWatchBtnExternal" type="button">Watch</button>
+        </div>
       </section>
     </header>
 
     <main class="main-content">
       <div class="top-control-rows">
-        <nav class="top-tabs" id="typeTabs" aria-label="Media type">
-          <button class="top-tab active" data-type="movie">Movies</button>
-          <button class="top-tab" data-type="show">TV Shows</button>
-          <button class="top-tab" data-type="anime">Anime</button>
-        </nav>
+        <div class="split-tabs">
+          <nav class="top-tabs tabs-left" id="typeTabs" aria-label="Media type">
+            <button class="top-tab active" data-type="movie">Movies</button>
+            <button class="top-tab" data-type="show">TV Shows</button>
+            <button class="top-tab" data-type="anime">Anime</button>
+          </nav>
 
-        <nav class="top-tabs status-tabs" id="statusTabs" aria-label="Watch status">
-          <button class="top-tab active" data-status="unwatched">Unwatched</button>
-          <button class="top-tab" data-status="watched">Watched</button>
-          <button class="top-tab" data-status="all">All</button>
-        </nav>
+          <nav class="top-tabs tabs-right" id="statusTabs" aria-label="Watch status">
+            <button class="top-tab active" data-status="unwatched">Unwatched</button>
+            <button class="top-tab" data-status="watched">Watched</button>
+            <button class="top-tab" data-status="all">All</button>
+          </nav>
+        </div>
       </div>
 
-      <section class="page-layout">
+      <section class="page-layout" id="pageLayout">
         <aside id="rankingSidebar" class="ranking-sidebar hidden">
           <div class="sidebar-panel">
             <div class="sidebar-head">
@@ -105,9 +124,9 @@
             </div>
 
             <div class="control-group checkbox-group">
-              <label class="checkbox-label">
+              <label class="checkbox-label nostalgia-label">
                 <input id="nostalgicToggle" type="checkbox" />
-                <span>Nostalgic only</span>
+                <span>✨ Nostalgia ✨</span>
               </label>
             </div>
 

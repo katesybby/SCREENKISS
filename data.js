@@ -14,7 +14,8 @@ const WATCHLIST = [
     rating: null,
     review: "",
     poster: "",
-    autoPoster: true
+    autoPoster: true,
+    watchSlug: "opus"
   },
   {
     id: "forbidden-fruits-2009",
@@ -31,8 +32,9 @@ const WATCHLIST = [
     rating: null,
     review: "",
     poster: "",
-    autoPoster: true
-  },
+    autoPoster: true,
+    watchSlug: "forbidden-fruits"
+  }, 
   {
     id: "bodies-bodies-bodies-2022",
     title: "Bodies Bodies Bodies",
@@ -48,7 +50,8 @@ const WATCHLIST = [
     rating: 4.0,
     review: "",
     poster: "",
-    autoPoster: true
+    autoPoster: true,
+    watchSlug: "bodies-bodies-bodies"
   },
   {
     id: "promising-young-woman-2020",
@@ -65,7 +68,8 @@ const WATCHLIST = [
     rating: 4.5,
     review: "",
     poster: "",
-    autoPoster: true
+    autoPoster: true,
+    watchSlug: "promising-young-woman"
   },
   {
     id: "the-shining-1980",
@@ -82,7 +86,8 @@ const WATCHLIST = [
     rating: 4.5,
     review: "",
     poster: "",
-    autoPoster: true
+    autoPoster: true, 
+    watchSlug: "the-shining"
   },
   {
     id: "the-substance-2024",
@@ -99,7 +104,8 @@ const WATCHLIST = [
     rating: 4.5,
     review: "",
     poster: "",
-    autoPoster: true
+    autoPoster: true, 
+    watchSlug: "the-substance"
   },
   {
     id: "hustlers-2019",
@@ -116,7 +122,8 @@ const WATCHLIST = [
     rating: 4.0,
     review: "",
     poster: "posters/hustlers.jpg",
-    autoPoster: true
+    autoPoster: false,
+    watchSlug: "hustlers"
   },
 
   {
@@ -133,8 +140,9 @@ const WATCHLIST = [
     watched: true,
     rating: 5.0,
     review: "",
-    poster: "posters/severance.jpg",
-    autoPoster: true
+    poster: "",
+    autoPoster: true,
+    watchSlug: "severance"
   },
   {
     id: "fleabag-2016",
@@ -151,7 +159,8 @@ const WATCHLIST = [
     rating: 5.0,
     review: "",
     poster: "",
-    autoPoster: true
+    autoPoster: true,
+    watchSlug: "fleabag"
   },
 
   {
@@ -169,7 +178,8 @@ const WATCHLIST = [
     rating: 5.0,
     review: "",
     poster: "posters/nana.jpg",
-    autoPoster: true
+    autoPoster: false,
+    watchSlug: "nana"
   },
 
   {
@@ -187,7 +197,8 @@ const WATCHLIST = [
     rating: null,
     review: "",
     poster: "posters/black-swan.jpg",
-    autoPoster: true
+    autoPoster: false,
+    watchSlug: "black-swan"
   },
   {
     id: "the-handmaiden-2016",
@@ -204,7 +215,8 @@ const WATCHLIST = [
     rating: null,
     review: "",
     poster: "posters/the-handmaiden.jpg",
-    autoPoster: true
+    autoPoster: false,
+    watchSlug: "the-handmaiden"
   },
   {
     id: "portrait-of-a-lady-on-fire-2019",
@@ -221,7 +233,8 @@ const WATCHLIST = [
     rating: null,
     review: "",
     poster: "posters/portrait-of-a-lady-on-fire.jpg",
-    autoPoster: true
+    autoPoster: false,
+    watchSlug: "portrait-of-a-lady-on-fire"
   },
   {
     id: "dark-2017",
@@ -238,7 +251,8 @@ const WATCHLIST = [
     rating: null,
     review: "",
     poster: "",
-    autoPoster: true
+    autoPoster: true,
+    watchSlug: "dark"
   },
   {
     id: "ergo-proxy-2006",
@@ -255,7 +269,8 @@ const WATCHLIST = [
     rating: null,
     review: "",
     poster: "posters/ergo-proxy.jpg",
-    autoPoster: true
+    autoPoster: false,
+    watchSlug: "ergo-proxy"
   },
   {
     id: "wild-child-2008",
@@ -272,7 +287,8 @@ const WATCHLIST = [
     rating: 3.5,
     review: "",
     poster: "",
-    autoPoster: true
+    autoPoster: true,
+    watchSlug: "wild-child"
   },
   {
     id: "shes-the-man-2006",
@@ -289,9 +305,8 @@ const WATCHLIST = [
     rating: 4.0,
     review: "",
     poster: "",
-    autoPoster: true
+    autoPoster: true,
+    watchSlug: "shes-the-man"
   },
 
-
-
-];
+]; 
