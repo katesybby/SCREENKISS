@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,87 +9,131 @@
 <body>
   <div class="site-shell">
     <header class="hero">
-      <div class="marquee-glow"></div>
+      <div class="hero-topbar">
+        <div>
+          <p class="tiny-label">CURATED SCREEN ARCHIVE</p>
+          <h1>SCREENKISS</h1>
+          <p class="hero-sub">pink velvet cinema, sorted by mood and damage level</p>
+        </div>
 
-      <div class="hero-top">
-        <p class="tiny-label">CURATED CINEMA ARCHIVE</p>
-        <h1>SCREENKISS</h1>
-        <p class="hero-sub">
-            <p class="hero-sub">
-                pink neon cinema, unwell masterpieces, chaotic excellent taste
-            </p>
-        </p>
+        <div class="top-actions">
+          <button id="themeToggleBtn" class="theme-toggle">Light Mode</button>
+        </div>
       </div>
 
-      <section class="favorites-section">
-        <div class="section-head">
-          <h2>Featured Favorites</h2>
-          <p>the permanent main character shelf</p>
+      <section class="hero-featured">
+        <div class="featured-panel">
+          <button id="featuredPrevBtn" class="carousel-arrow left" aria-label="Previous featured">‹</button>
+          <div id="featuredDisplay" class="featured-display"></div>
+          <button id="featuredNextBtn" class="carousel-arrow right" aria-label="Next featured">›</button>
         </div>
-        <div id="favoritesRow" class="favorites-row"></div>
       </section>
     </header>
 
-    <main class="main-layout">
-      <nav class="top-tabs" id="topTabs">
-        <button class="top-tab active" data-type="all">All</button>
-        <button class="top-tab" data-type="movie">Movies</button>
-        <button class="top-tab" data-type="show">TV Shows</button>
-        <button class="top-tab" data-type="anime">Anime</button>
-      </nav>
+    <main class="main-content">
+      <div class="top-control-rows">
+        <nav class="top-tabs" id="typeTabs" aria-label="Media type">
+          <button class="top-tab active" data-type="movie">Movies</button>
+          <button class="top-tab" data-type="show">TV Shows</button>
+          <button class="top-tab" data-type="anime">Anime</button>
+        </nav>
 
-      <section class="controls-panel">
-        <div class="control-group search-group">
-          <label for="searchInput">Search</label>
-          <input id="searchInput" type="text" placeholder="title, vibe, hint..." />
-        </div>
+        <nav class="top-tabs status-tabs" id="statusTabs" aria-label="Watch status">
+          <button class="top-tab active" data-status="unwatched">Unwatched</button>
+          <button class="top-tab" data-status="watched">Watched</button>
+          <button class="top-tab" data-status="all">All</button>
+        </nav>
+      </div>
 
-        <div class="control-group">
-          <label for="vibeSelect">Vibe</label>
-          <select id="vibeSelect">
-            <option value="all">All vibes</option>
-          </select>
-        </div>
+      <section class="page-layout">
+        <aside id="rankingSidebar" class="ranking-sidebar hidden">
+          <div class="sidebar-panel">
+            <div class="sidebar-head">
+              <h2>Top Rated</h2>
+              <p id="sidebarSubtitle">Best in category</p>
+            </div>
+            <div id="rankingList" class="ranking-list"></div>
+          </div>
+        </aside>
 
-        <div class="control-group">
-          <label for="sortSelect">Sort</label>
-          <select id="sortSelect">
-            <option value="title-asc">Title A–Z</option>
-            <option value="title-desc">Title Z–A</option>
-            <option value="year-desc">Newest</option>
-            <option value="year-asc">Oldest</option>
-          </select>
-        </div>
+        <section class="content-column">
+          <section class="controls-panel">
+            <div class="control-group search-group">
+              <label for="searchInput">Search</label>
+              <input id="searchInput" type="text" placeholder="title, vibe, hint, adjectives..." />
+            </div>
 
-        <div class="control-group">
-          <label for="favoritesOnly">Focus</label>
-          <select id="favoritesOnly">
-            <option value="all">Everything</option>
-            <option value="favorites">Favorites only</option>
-          </select>
-        </div>
+            <div class="control-group">
+              <label for="vibeSelect">Vibe</label>
+              <select id="vibeSelect">
+                <option value="all">All vibes</option>
+              </select>
+            </div>
 
-        <div class="control-actions">
-          <button id="clearFiltersBtn" class="secondary-btn">Clear Filters</button>
-          <button id="randomPickBtn" class="primary-btn">Pick for Me</button>
-        </div>
+            <div class="control-group">
+              <label for="intensitySelect">Damage Level</label>
+              <select id="intensitySelect">
+                <option value="all">All levels</option>
+                <option value="glossy">Glossy</option>
+                <option value="messy">Messy</option>
+                <option value="unwell">Unwell</option>
+              </select>
+            </div>
+
+            <div class="control-group">
+              <label for="sortSelect">Sort</label>
+              <select id="sortSelect">
+                <option value="date-desc">Newest → Oldest</option>
+                <option value="date-asc">Oldest → Newest</option>
+                <option value="title-asc">Title A–Z</option>
+                <option value="title-desc">Title Z–A</option>
+                <option value="rating-desc">Highest Rated</option>
+                <option value="rating-asc">Lowest Rated</option>
+              </select>
+            </div>
+
+            <div class="control-group" id="ratingFilterWrap">
+              <label for="ratingFilterSelect">Kisses</label>
+              <select id="ratingFilterSelect">
+                <option value="all">All ratings</option>
+                <option value="4.5">4.5+ kisses</option>
+                <option value="4">4+ kisses</option>
+                <option value="3.5">3.5+ kisses</option>
+                <option value="3">3+ kisses</option>
+                <option value="2">2+ kisses</option>
+              </select>
+            </div>
+
+            <div class="control-group checkbox-group">
+              <label class="checkbox-label">
+                <input id="nostalgicToggle" type="checkbox" />
+                <span>Nostalgic only</span>
+              </label>
+            </div>
+
+            <div class="control-actions">
+              <button id="clearFiltersBtn" class="secondary-btn">Clear</button>
+              <button id="randomPickBtn" class="primary-btn">Pick for Me</button>
+            </div>
+          </section>
+
+          <section class="results-header">
+            <div>
+              <h2 id="resultsTitle">Movies</h2>
+              <p id="resultsMeta">0 titles</p>
+            </div>
+          </section>
+
+          <section id="cardGrid" class="card-grid"></section>
+        </section>
       </section>
-
-      <section class="results-header">
-        <div>
-          <h2 id="resultsTitle">All Titles</h2>
-          <p id="resultsMeta">0 titles</p>
-        </div>
-      </section>
-
-      <section id="cardGrid" class="card-grid"></section>
     </main>
   </div>
 
   <div id="detailsModal" class="modal hidden">
     <div id="modalBackdrop" class="modal-backdrop"></div>
     <div class="modal-card">
-      <button id="closeModalBtn" class="modal-close">×</button>
+      <button id="closeModalBtn" class="modal-close" aria-label="Close">×</button>
       <div id="modalBody" class="modal-body"></div>
     </div>
   </div>
