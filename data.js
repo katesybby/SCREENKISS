@@ -31,8 +31,8 @@ const WATCHLIST = [
     watched: false,
     rating: null,
     review: "",
-    poster: "",
-    autoPoster: true,
+    poster: "posters/forbidden-fruits.jpg",
+    autoPoster: false,
     watchSlug: "forbidden-fruits"
   }, 
   {
