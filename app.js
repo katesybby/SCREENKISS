@@ -13,6 +13,10 @@ const state = {
   ratingDraft: null
 };
 
+const TMDB_API_KEY = "33c28903a3ec65c0baf768470ac4f02c";
+const TMDB_BASE = "https://api.themoviedb.org/3";
+const TMDB_IMG = "https://image.tmdb.org/t/p/w500";
+
 const POSTER_CACHE_KEY = "screenkiss-poster-cache-v1";
 const WATCHLIST_STORAGE_KEY = "screenkiss-watchlist-v1";
 
@@ -129,13 +133,60 @@ function setCachedPoster(item, url) {
   savePosterCache();
 }
 
-/**
- * Future auto-poster hook.
- * Next step: wire TMDb lookup in here.
- */
 async function ensurePoster(item) {
-  if (!item.autoPoster) return;
-  if (getResolvedPoster(item)) return;
+  if (!item.autoPoster) {
+    console.log("skip autoPoster false:", item.title);
+    return;
+  }
+
+  const existing = getResolvedPoster(item);
+  if (existing) {
+    console.log("already has poster:", item.title, existing);
+    return;
+  }
+
+  try {
+    const query = encodeURIComponent(item.title);
+    const endpoint = item.type === "movie" ? "movie" : "tv";
+    const url = `${TMDB_BASE}/search/${endpoint}?api_key=${TMDB_API_KEY}&query=${query}`;
+
+    console.log("fetching poster for:", item.title, url);
+
+    const res = await fetch(url);
+    console.log("response status:", item.title, res.status);
+
+    const data = await res.json();
+    console.log("response data:", item.title, data);
+
+    if (!data.results || data.results.length === 0) {
+      console.log("no results:", item.title);
+      return;
+    }
+
+    let match = null;
+
+    if (item.year) {
+      match = data.results.find(r => {
+        const date = r.release_date || r.first_air_date;
+        return date && date.startsWith(String(item.year));
+      });
+    }
+
+    if (!match) match = data.results[0];
+
+    if (!match.poster_path) {
+      console.log("no poster_path:", item.title, match);
+      return;
+    }
+
+    const posterUrl = TMDB_IMG + match.poster_path;
+    setCachedPoster(item, posterUrl);
+
+    console.log("cached poster:", item.title, posterUrl);
+    renderCards();
+  } catch (err) {
+    console.error("Poster fetch failed:", item.title, err);
+  }
 }
 
 function getPosterMarkup(item, className = "poster") {
@@ -168,24 +219,51 @@ function toggleLightDark() {
 }
 
 function triggerMovieModeAnimation() {
-  movieModeOverlay.classList.remove("hidden", "reveal", "dim-lights", "hide-lights");
+  movieModeOverlay.className = "movie-mode-overlay";
   void movieModeOverlay.offsetWidth;
 
-  requestAnimationFrame(() => {
-    movieModeOverlay.classList.add("reveal");
-  });
-
   setTimeout(() => {
-    movieModeOverlay.classList.add("dim-lights");
+    movieModeOverlay.classList.add("drop-closed");
+  }, 30);
+
+  // flash once before dimming
+  setTimeout(() => {
+    movieModeOverlay.classList.add("flash-bulbs");
   }, 3000);
 
   setTimeout(() => {
-    movieModeOverlay.classList.add("hide-lights");
-  }, 4300);
+    movieModeOverlay.classList.remove("flash-bulbs");
+  }, 3400);
+
+  // dim scene + bulbs together
+  setTimeout(() => {
+    movieModeOverlay.classList.add("dim-bulbs", "dim-scene");
+  }, 4500);
+
+  // spotlight enters sooner / faster
+  setTimeout(() => {
+    movieModeOverlay.classList.add("show-spotlight");
+  }, 7000);
 
   setTimeout(() => {
-    movieModeOverlay.classList.add("hidden");
-  }, 5200);
+    movieModeOverlay.classList.add("move-spotlight");
+  }, 7250);
+
+  setTimeout(() => {
+    movieModeOverlay.classList.add("settle-spotlight");
+  }, 9300);
+
+  // curtains open, spotlight fades during opening
+  setTimeout(() => {
+    movieModeOverlay.classList.add("part-open", "fade-spotlight");
+  }, 10500);
+
+  // bring side bulbs back up after curtains open
+  setTimeout(() => {
+    movieModeOverlay.classList.remove("dim-bulbs");
+  }, 13600);
+
+  // do NOT hide the overlay anymore
 }
 
 function enterMovieTimeMode() {
@@ -279,10 +357,8 @@ function populateVibeSelect() {
 }
 
 function getWatchUrl(item) {
-  if (item.watchSlug && item.watchSlug.trim()) {
-    return `https://wmovies.one/${item.watchSlug.trim()}/`;
-  }
-  return "https://wmovies.one/";
+  const query = encodeURIComponent(item.title);
+  return `https://theflixertv.to/search/${query}`;
 }
 
 function renderFeatured() {
@@ -309,7 +385,7 @@ function renderFeatured() {
   state.currentFeaturedItemId = item.id;
 
   featuredDisplay.innerHTML = `
-    <div class="featured-slide">
+    <div class="featured-slide" data-featured-id="${escapeHtml(item.id)}">
       ${getPosterMarkup(item, "featured-poster")}
       <div class="featured-info">
         <div class="featured-kicker">Featured ${normalizedIndex + 1} / ${featuredItems.length}</div>
@@ -318,13 +394,18 @@ function renderFeatured() {
         <div class="featured-meta">
           <span class="badge">${escapeHtml(item.vibe)}</span>
           <span class="badge">${escapeHtml(getIntensityLabel(item.intensity))}</span>
-          ${item.watched ? `<span class="rating-pill ${item.rating === 5 ? "perfect-score" : ""}">${escapeHtml(formatKisses(item.rating))}</span>` : ""}
+          ${item.rating ? `<span class="rating-pill ${item.rating === 5 ? "perfect-score" : ""}">${escapeHtml(formatKisses(item.rating))}</span>` : ""}
         </div>
         <p><em>${escapeHtml(item.hint)}</em></p>
         <div class="featured-adjectives">${escapeHtml((item.adjectives || []).join(" • "))}</div>
       </div>
     </div>
   `;
+
+  const slide = featuredDisplay.querySelector(".featured-slide");
+  if (slide) {
+    slide.addEventListener("click", () => openModal(item, false));
+  }
 }
 
 function renderCards() {
@@ -463,15 +544,15 @@ function fillPercentFromRating(rating) {
 function buildStarSegments() {
   return Array.from({ length: 11 }, (_, i) => {
     const rating = ratingValueFromSegment(i + 1);
-    const start = (i / 11) * 100;
-    const width = 100 / 11;
-    return `<div class="star-segment" data-rating="${rating}" style="left:${start}%; width:${width}%"></div>`;
+    return `<div class="star-segment" data-rating="${rating}"></div>`;
   }).join("");
 }
 
 function openModal(item, fromRandom = false) {
   state.ratingDraft = item.rating ?? null;
   const watchUrl = getWatchUrl(item);
+  const showRatingEditor = item.watched && item.rating === null;
+  const showChangeRatingButton = item.watched && item.rating !== null;
 
   modalBody.innerHTML = `
     ${getPosterMarkup(item, "modal-poster")}
@@ -483,7 +564,7 @@ function openModal(item, fromRandom = false) {
         <span class="detail">${escapeHtml(item.vibe)}</span>
         <span class="detail">${escapeHtml(getIntensityLabel(item.intensity))}</span>
         ${item.nostalgic ? `<span class="detail">Nostalgic</span>` : ""}
-        ${item.watched ? `<span class="rating-pill ${item.rating === 5 ? "perfect-score" : ""}">${escapeHtml(formatKisses(item.rating))}</span>` : `<span class="detail">Unwatched</span>`}
+        ${item.watched && item.rating !== null ? `<span class="rating-pill ${item.rating === 5 ? "perfect-score" : ""}">${escapeHtml(formatKisses(item.rating))}</span>` : `<span class="detail">${item.watched ? "Watched" : "Unwatched"}</span>`}
       </div>
 
       <p><em>${escapeHtml(item.hint)}</em></p>
@@ -492,24 +573,27 @@ function openModal(item, fromRandom = false) {
       <div class="modal-actions">
         <a class="watch-btn" href="${escapeHtml(watchUrl)}" target="_blank" rel="noopener noreferrer">Watch</a>
         <button id="toggleWatchedBtn" class="secondary-btn">${item.watched ? "Mark Unwatched" : "Mark Watched"}</button>
+        ${showChangeRatingButton ? `<button id="changeRatingBtn" class="secondary-btn">Change Rating</button>` : ""}
         ${fromRandom ? `<button id="pickAnotherBtn" class="primary-btn">Pick Another</button>` : ""}
       </div>
 
-      <div class="modal-rating-box">
+      <div class="modal-rating-box ${showRatingEditor ? "" : "hidden"}" id="modalRatingBox">
         <h3>Rate it in kisses</h3>
         <div class="rating-preview" id="ratingPreview">${escapeHtml(state.ratingDraft ? `${formatKisses(state.ratingDraft)} selected` : "Hover to choose a rating")}</div>
 
-        <div class="star-rating" id="starRating" style="--fill-percent:${fillPercentFromRating(state.ratingDraft)}%;">
-          <div class="star-rating-base">★★★★★</div>
-          <div class="star-rating-fill">★★★★★</div>
-          <div class="star-rating-hitbox" id="starRatingHitbox">
-            ${buildStarSegments()}
+        <div class="star-rating-wrap">
+          <div class="star-rating" id="starRating" style="--fill-percent:${fillPercentFromRating(state.ratingDraft)}%;">
+            <div class="star-rating-base">★★★★★</div>
+            <div class="star-rating-fill">★★★★★</div>
+            <div class="star-rating-hitbox" id="starRatingHitbox">
+              ${buildStarSegments()}
+            </div>
           </div>
         </div>
 
         <div class="rating-submit-row">
-          <button id="submitRatingBtn" class="primary-btn">Submit Rating</button>
-          <button id="resetRatingBtn" class="rating-reset-btn">Clear Rating</button>
+          <button id="submitRatingBtn" class="primary-btn ${state.ratingDraft === null ? "hidden" : ""}">Submit Rating</button>
+          <button id="resetDraftBtn" class="rating-reset-btn">Clear Draft</button>
         </div>
       </div>
     </div>
@@ -518,31 +602,15 @@ function openModal(item, fromRandom = false) {
   detailsModal.classList.remove("hidden");
   document.body.style.overflow = "hidden";
 
-  const starRating = document.getElementById("starRating");
+  const toggleWatchedBtn = document.getElementById("toggleWatchedBtn");
+  const modalRatingBox = document.getElementById("modalRatingBox");
+  const changeRatingBtn = document.getElementById("changeRatingBtn");
+  const submitRatingBtn = document.getElementById("submitRatingBtn");
+  const resetDraftBtn = document.getElementById("resetDraftBtn");
   const ratingPreview = document.getElementById("ratingPreview");
+  const starRating = document.getElementById("starRating");
   const hitbox = document.getElementById("starRatingHitbox");
 
-  hitbox.querySelectorAll(".star-segment").forEach(segment => {
-    segment.addEventListener("mouseenter", () => {
-      const rating = Number(segment.dataset.rating);
-      starRating.style.setProperty("--fill-percent", `${fillPercentFromRating(rating)}%`);
-      ratingPreview.textContent = `${formatKisses(rating)} preview`;
-    });
-
-    segment.addEventListener("click", () => {
-      const rating = Number(segment.dataset.rating);
-      state.ratingDraft = rating;
-      starRating.style.setProperty("--fill-percent", `${fillPercentFromRating(rating)}%`);
-      ratingPreview.textContent = `${formatKisses(rating)} selected`;
-    });
-  });
-
-  hitbox.addEventListener("mouseleave", () => {
-    starRating.style.setProperty("--fill-percent", `${fillPercentFromRating(state.ratingDraft)}%`);
-    ratingPreview.textContent = state.ratingDraft ? `${formatKisses(state.ratingDraft)} selected` : "Hover to choose a rating";
-  });
-
-  const toggleWatchedBtn = document.getElementById("toggleWatchedBtn");
   toggleWatchedBtn.addEventListener("click", () => {
     const target = getItemById(item.id);
     if (!target) return;
@@ -550,7 +618,7 @@ function openModal(item, fromRandom = false) {
     if (target.watched) {
       updateItem(item.id, { watched: false, rating: null });
     } else {
-      updateItem(item.id, { watched: true, rating: target.rating ?? 3.5 });
+      updateItem(item.id, { watched: true });
     }
 
     const refreshed = getItemById(item.id);
@@ -558,23 +626,101 @@ function openModal(item, fromRandom = false) {
     openModal(refreshed, fromRandom);
   });
 
-  const submitRatingBtn = document.getElementById("submitRatingBtn");
-  submitRatingBtn.addEventListener("click", () => {
-    if (state.ratingDraft === null) return;
-    updateItem(item.id, { watched: true, rating: state.ratingDraft });
-    const refreshed = getItemById(item.id);
-    renderAll();
-    openModal(refreshed, fromRandom);
-  });
+  if (changeRatingBtn) {
+    changeRatingBtn.addEventListener("click", () => {
+      modalRatingBox.classList.remove("hidden");
+      changeRatingBtn.classList.add("hidden");
+      state.ratingDraft = item.rating;
+      if (starRating) {
+        starRating.style.setProperty("--fill-percent", `${fillPercentFromRating(state.ratingDraft)}%`);
+      }
+      if (ratingPreview) {
+        ratingPreview.textContent = `${formatKisses(state.ratingDraft)} selected`;
+      }
+      if (submitRatingBtn) {
+        submitRatingBtn.classList.remove("hidden");
+      }
+    });
+  }
 
-  const resetRatingBtn = document.getElementById("resetRatingBtn");
-  resetRatingBtn.addEventListener("click", () => {
-    state.ratingDraft = null;
-    updateItem(item.id, { rating: null });
-    const refreshed = getItemById(item.id);
-    renderAll();
-    openModal(refreshed, fromRandom);
-  });
+  if (hitbox && starRating && ratingPreview) {
+    hitbox.querySelectorAll(".star-segment").forEach(segment => {
+      segment.addEventListener("mouseenter", () => {
+        if (state.ratingDraft !== null) return;
+        const rating = Number(segment.dataset.rating);
+        starRating.style.setProperty("--fill-percent", `${fillPercentFromRating(rating)}%`);
+        ratingPreview.textContent = `${formatKisses(rating)} preview`;
+      });
+
+      segment.addEventListener("click", () => {
+        const rating = Number(segment.dataset.rating);
+
+        if (state.ratingDraft === rating) {
+          state.ratingDraft = null;
+          starRating.style.setProperty("--fill-percent", `0%`);
+          ratingPreview.textContent = "Hover to choose a rating";
+          if (submitRatingBtn) submitRatingBtn.classList.add("hidden");
+        } else {
+          state.ratingDraft = rating;
+          starRating.style.setProperty("--fill-percent", `${fillPercentFromRating(rating)}%`);
+          ratingPreview.textContent = `${formatKisses(rating)} selected`;
+          if (submitRatingBtn) submitRatingBtn.classList.remove("hidden");
+        }
+      });
+    });
+
+    hitbox.addEventListener("mousemove", event => {
+      if (state.ratingDraft !== null) return;
+      const rect = hitbox.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const pct = Math.max(0, Math.min(1, x / rect.width));
+
+      let rating = 1;
+      if (pct <= 1 / 11) rating = 1;
+      else if (pct <= 2 / 11) rating = 1.5;
+      else if (pct <= 3 / 11) rating = 2;
+      else if (pct <= 4 / 11) rating = 2.5;
+      else if (pct <= 5 / 11) rating = 3;
+      else if (pct <= 6 / 11) rating = 3.5;
+      else if (pct <= 7 / 11) rating = 4;
+      else if (pct <= 8 / 11) rating = 4.25;
+      else if (pct <= 9 / 11) rating = 4.5;
+      else if (pct <= 10 / 11) rating = 4.75;
+      else rating = 5;
+
+      starRating.style.setProperty("--fill-percent", `${fillPercentFromRating(rating)}%`);
+      ratingPreview.textContent = `${formatKisses(rating)} preview`;
+    });
+
+    hitbox.addEventListener("mouseleave", () => {
+      if (state.ratingDraft !== null) {
+        starRating.style.setProperty("--fill-percent", `${fillPercentFromRating(state.ratingDraft)}%`);
+        ratingPreview.textContent = `${formatKisses(state.ratingDraft)} selected`;
+      } else {
+        starRating.style.setProperty("--fill-percent", `0%`);
+        ratingPreview.textContent = "Hover to choose a rating";
+      }
+    });
+  }
+
+  if (submitRatingBtn) {
+    submitRatingBtn.addEventListener("click", () => {
+      if (state.ratingDraft === null) return;
+      updateItem(item.id, { watched: true, rating: state.ratingDraft });
+      const refreshed = getItemById(item.id);
+      renderAll();
+      openModal(refreshed, fromRandom);
+    });
+  }
+
+  if (resetDraftBtn) {
+    resetDraftBtn.addEventListener("click", () => {
+      state.ratingDraft = null;
+      if (starRating) starRating.style.setProperty("--fill-percent", `0%`);
+      if (ratingPreview) ratingPreview.textContent = "Hover to choose a rating";
+      if (submitRatingBtn) submitRatingBtn.classList.add("hidden");
+    });
+  }
 
   const pickAnotherBtn = document.getElementById("pickAnotherBtn");
   if (pickAnotherBtn) {
