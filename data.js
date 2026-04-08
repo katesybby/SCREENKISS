@@ -18,14 +18,14 @@ const WATCHLIST = [
     watchSlug: "opus"
   },
   {
-    id: "forbidden-fruits-2009",
+    id: "forbidden-fruits-2026",
     title: "Forbidden Fruits",
     type: "movie",
-    year: 2009,
-    vibe: "Queer / emotional",
+    year: 2026,
+    vibe: "Dark feminine",
     intensity: "messy",
-    adjectives: ["tender", "religious", "rebellious"],
-    hint: "two girls raised under strict religious pressure push against control; intimacy, shame, and freedom",
+    adjectives: ["stylized", "seductive", "gorey"],
+    hint: "four girls, one secret; forbidden desire, tension, and glossy danger",
     nostalgic: false,
     featured: true,
     watched: false,
@@ -33,8 +33,8 @@ const WATCHLIST = [
     review: "",
     poster: "posters/forbidden-fruits.jpg",
     autoPoster: false,
-    watchSlug: "forbidden-fruits"
-  }, 
+    watchSlug: ""
+  },
   {
     id: "bodies-bodies-bodies-2022",
     title: "Bodies Bodies Bodies",
@@ -140,8 +140,8 @@ const WATCHLIST = [
     watched: true,
     rating: 5.0,
     review: "",
-    poster: "",
-    autoPoster: true,
+    poster: "posters/severance.jpg",
+    autoPoster: false,
     watchSlug: "severance"
   },
   {

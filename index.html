@@ -52,15 +52,17 @@
       <div class="top-control-rows">
         <div class="split-tabs">
           <nav class="top-tabs tabs-left" id="typeTabs" aria-label="Media type">
-            <button class="top-tab active" data-type="movie">Movies</button>
+            <button class="top-tab" data-type="all">All</button>
+            <button class="top-tab active" data-type="americano">Americano</button>
+            <button class="top-tab" data-type="movie">Movies</button>
             <button class="top-tab" data-type="show">TV Shows</button>
             <button class="top-tab" data-type="anime">Anime</button>
           </nav>
 
           <nav class="top-tabs tabs-right" id="statusTabs" aria-label="Watch status">
-            <button class="top-tab active" data-status="unwatched">Unwatched</button>
+            <button class="top-tab" data-status="unwatched">Unwatched</button>
             <button class="top-tab" data-status="watched">Watched</button>
-            <button class="top-tab" data-status="all">All</button>
+            <button class="top-tab active" data-status="all">All</button>
           </nav>
         </div>
       </div>
@@ -109,6 +111,7 @@
                 <option value="title-desc">Title Z–A</option>
                 <option value="rating-desc">Highest Rated</option>
                 <option value="rating-asc">Lowest Rated</option>
+                <option value="random">Random</option>
               </select>
             </div>
 

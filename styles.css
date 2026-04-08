@@ -36,6 +36,11 @@ html[data-theme="light"] {
   --sticker-bg: rgba(255, 255, 255, 0.72);
 }
 
+html[data-theme="light"] .perfect-score-inline {
+  color: #f9d046;
+  text-shadow: 0 0 6px rgba(217, 164, 0, 0.18);
+}
+
 html[data-theme="movietime"] {
   --bg: #12020a;
   --bg-2: #250512;
@@ -95,14 +100,14 @@ body {
   opacity: 0.5;
 }
 
-.decor-stars::before {
+/* .decor-stars::before {
   background-image:
     radial-gradient(circle, rgba(255,255,255,0.55) 0 2px, transparent 2px),
     radial-gradient(circle, rgba(255,192,229,0.45) 0 2px, transparent 2px),
     radial-gradient(circle, rgba(255,255,255,0.35) 0 1.5px, transparent 1.5px);
   background-size: 220px 220px, 310px 310px, 170px 170px;
   background-position: 6% 12%, 88% 24%, 70% 78%;
-}
+} */
 
 .hero-featured {
   position: relative;
@@ -1103,6 +1108,37 @@ html[data-theme="light"] .modal-close {
   font-size: 0.95rem;
 }
 
+.card-year-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 24px;
+}
+
+.year-text {
+  display: inline-block;
+}
+
+.inline-rating {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--pink-3);
+  text-align: right;
+  min-width: 72px;
+}
+
+.perfect-score-inline {
+  color: #fff1c4;
+  text-shadow: 0 0 10px rgba(255, 215, 140, 0.25);
+}
+
 .kiss-row {
   display: flex;
   gap: 8px;
@@ -1169,6 +1205,19 @@ html[data-theme="light"] .modal-close {
     width: auto;
     max-width: 100%;
   }
+
+  .featured-year-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 24px;
+}
+
+.featured-year-row .inline-rating {
+  margin-left: 0;
+  min-width: auto;
+  justify-content: flex-start;
+}
 }
 
 @media (max-width: 760px) {

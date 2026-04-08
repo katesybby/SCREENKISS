@@ -1,13 +1,13 @@
 const state = {
-  type: "movie",
-  watchStatus: "unwatched",
+  type: "americano",
+  watchStatus: "all",
   search: "",
   vibe: "all",
   intensity: "all",
   ratingFilter: "all",
   nostalgicOnly: false,
   sort: "date-desc",
-  theme: localStorage.getItem("screenkiss-theme") || "dark",
+  theme: localStorage.getItem("screenkiss-theme") || "light",
   featuredIndex: 0,
   currentFeaturedItemId: null,
   ratingDraft: null
@@ -20,8 +20,35 @@ const TMDB_IMG = "https://image.tmdb.org/t/p/w500";
 const POSTER_CACHE_KEY = "screenkiss-poster-cache-v1";
 const WATCHLIST_STORAGE_KEY = "screenkiss-watchlist-v1";
 
+// to reload the data.js file into screen kiss, take the 2 lines above and replace with this: 
+  // localStorage.removeItem("screenkiss-watchlist-v1");
+  // localStorage.removeItem("screenkiss-poster-cache-v1");
+  // location.reload();
+
 const storedWatchlist = localStorage.getItem(WATCHLIST_STORAGE_KEY);
-let WATCHLIST_STATE = storedWatchlist ? JSON.parse(storedWatchlist) : WATCHLIST;
+
+function mergeWatchlistState(baseList, savedList) {
+  if (!savedList) return baseList;
+
+  const savedMap = new Map(savedList.map(item => [item.id, item]));
+
+  return baseList.map(baseItem => {
+    const savedItem = savedMap.get(baseItem.id);
+    if (!savedItem) return baseItem;
+
+    return {
+      ...baseItem,
+      watched: savedItem.watched ?? baseItem.watched,
+      rating: savedItem.rating ?? baseItem.rating,
+      review: savedItem.review ?? baseItem.review
+    };
+  });
+}
+
+let WATCHLIST_STATE = mergeWatchlistState(
+  WATCHLIST,
+  storedWatchlist ? JSON.parse(storedWatchlist) : null
+);
 
 const posterCache = JSON.parse(localStorage.getItem(POSTER_CACHE_KEY) || "{}");
 
@@ -34,6 +61,7 @@ const featuredPrevBtn = document.getElementById("featuredPrevBtn");
 const featuredNextBtn = document.getElementById("featuredNextBtn");
 const featuredOpenBtnExternal = document.getElementById("featuredOpenBtnExternal");
 const featuredWatchBtnExternal = document.getElementById("featuredWatchBtnExternal");
+let featuredInterval = null;
 
 const searchInput = document.getElementById("searchInput");
 const vibeSelect = document.getElementById("vibeSelect");
@@ -74,6 +102,15 @@ function updateItem(id, updates) {
   saveWatchlistState();
 }
 
+function startFeaturedAutoplay() {
+  if (featuredInterval) clearInterval(featuredInterval);
+
+  featuredInterval = setInterval(() => {
+    state.featuredIndex += 1;
+    renderFeatured();
+  }, 10000);
+}
+
 function escapeHtml(str) {
   return String(str ?? "")
     .replaceAll("&", "&amp;")
@@ -85,6 +122,8 @@ function escapeHtml(str) {
 
 function getTypeLabel(type) {
   return {
+    all: "All",
+    americano: "Movies + TV Shows",
     movie: "Movies",
     show: "TV Shows",
     anime: "Anime"
@@ -134,34 +173,20 @@ function setCachedPoster(item, url) {
 }
 
 async function ensurePoster(item) {
-  if (!item.autoPoster) {
-    console.log("skip autoPoster false:", item.title);
-    return;
-  }
+  if (!item.autoPoster) return;
 
   const existing = getResolvedPoster(item);
-  if (existing) {
-    console.log("already has poster:", item.title, existing);
-    return;
-  }
+  if (existing) return;
 
   try {
     const query = encodeURIComponent(item.title);
     const endpoint = item.type === "movie" ? "movie" : "tv";
     const url = `${TMDB_BASE}/search/${endpoint}?api_key=${TMDB_API_KEY}&query=${query}`;
 
-    console.log("fetching poster for:", item.title, url);
-
     const res = await fetch(url);
-    console.log("response status:", item.title, res.status);
-
     const data = await res.json();
-    console.log("response data:", item.title, data);
 
-    if (!data.results || data.results.length === 0) {
-      console.log("no results:", item.title);
-      return;
-    }
+    if (!data.results || data.results.length === 0) return;
 
     let match = null;
 
@@ -173,19 +198,15 @@ async function ensurePoster(item) {
     }
 
     if (!match) match = data.results[0];
-
-    if (!match.poster_path) {
-      console.log("no poster_path:", item.title, match);
-      return;
-    }
+    if (!match.poster_path) return;
 
     const posterUrl = TMDB_IMG + match.poster_path;
-    setCachedPoster(item, posterUrl);
 
-    console.log("cached poster:", item.title, posterUrl);
+    setCachedPoster(item, posterUrl);
     renderCards();
+
   } catch (err) {
-    console.error("Poster fetch failed:", item.title, err);
+    console.warn("Poster fetch failed:", item.title);
   }
 }
 
@@ -205,6 +226,12 @@ function getPosterMarkup(item, className = "poster") {
       <div class="poster-fallback">${escapeHtml(item.title)}</div>
     </div>
   `;
+}
+
+function clearPosterCacheForItem(item) {
+  const cacheKey = getPosterCacheKey(item);
+  delete posterCache[cacheKey];
+  savePosterCache();
 }
 
 function applyTheme() {
@@ -273,6 +300,14 @@ function enterMovieTimeMode() {
 }
 
 function getBaseTypeItems() {
+  if (state.type === "all") {
+    return WATCHLIST_STATE;
+  }
+
+  if (state.type === "americano") {
+    return WATCHLIST_STATE.filter(item => item.type === "movie" || item.type === "show");
+  }
+
   return WATCHLIST_STATE.filter(item => item.type === state.type);
 }
 
@@ -334,6 +369,9 @@ function sortItems(items) {
     default:
       sorted.sort((a, b) => (b.year || 0) - (a.year || 0));
       break;
+    case "random":
+      sorted.sort(() => Math.random() - 0.5);
+      break;
   }
 
   return sorted;
@@ -390,11 +428,13 @@ function renderFeatured() {
       <div class="featured-info">
         <div class="featured-kicker">Featured ${normalizedIndex + 1} / ${featuredItems.length}</div>
         <h2>${escapeHtml(item.title)}</h2>
-        <div class="featured-year">${escapeHtml(item.year)}</div>
+        <div class="featured-year featured-year-row">
+          <span class="year-text">${escapeHtml(item.year)}</span>
+          ${item.watched && item.rating !== null ? `<span class="inline-rating ${item.rating === 5 ? "perfect-score-inline" : ""}">${escapeHtml(formatKisses(item.rating))}</span>` : ""}
+        </div>
         <div class="featured-meta">
           <span class="badge">${escapeHtml(item.vibe)}</span>
           <span class="badge">${escapeHtml(getIntensityLabel(item.intensity))}</span>
-          ${item.rating ? `<span class="rating-pill ${item.rating === 5 ? "perfect-score" : ""}">${escapeHtml(formatKisses(item.rating))}</span>` : ""}
         </div>
         <p><em>${escapeHtml(item.hint)}</em></p>
         <div class="featured-adjectives">${escapeHtml((item.adjectives || []).join(" • "))}</div>
@@ -435,10 +475,12 @@ function renderCards() {
           <span class="badge">${escapeHtml(item.vibe)}</span>
           <span class="badge">${escapeHtml(getIntensityLabel(item.intensity))}</span>
           ${item.nostalgic ? `<span class="badge">Nostalgic</span>` : ""}
-          ${item.watched ? `<span class="rating-pill ${item.rating === 5 ? "perfect-score" : ""}">${escapeHtml(formatKisses(item.rating))}</span>` : ""}
         </div>
         <h3>${escapeHtml(item.title)}</h3>
-        <div class="card-year">${escapeHtml(item.year)}</div>
+        <div class="card-year card-year-row">
+          <span class="year-text">${escapeHtml(item.year)}</span>
+          ${item.watched && item.rating !== null ? `<span class="inline-rating ${item.rating === 5 ? "perfect-score-inline" : ""}">${escapeHtml(formatKisses(item.rating))}</span>` : ""}
+        </div>
         <p><em>${escapeHtml(item.hint)}</em></p>
         <div class="card-adjectives">${escapeHtml((item.adjectives || []).join(" • "))}</div>
       </div>
@@ -460,8 +502,7 @@ function getRandomVisibleItem() {
 }
 
 function getTopRankedItems(limit = 10) {
-  return WATCHLIST_STATE
-    .filter(item => item.type === state.type)
+  return getBaseTypeItems()
     .filter(item => item.watched === true)
     .filter(item => item.rating !== null && item.rating !== undefined)
     .sort((a, b) => (b.rating - a.rating) || a.title.localeCompare(b.title))
@@ -558,13 +599,16 @@ function openModal(item, fromRandom = false) {
     ${getPosterMarkup(item, "modal-poster")}
     <div class="modal-content">
       <h2>${escapeHtml(item.title)}</h2>
-      <div class="card-year">${escapeHtml(item.year)}</div>
+      <div class="card-year card-year-row">
+        <span class="year-text">${escapeHtml(item.year)}</span>
+        ${item.watched && item.rating !== null ? `<span class="inline-rating ${item.rating === 5 ? "perfect-score-inline" : ""}">${escapeHtml(formatKisses(item.rating))}</span>` : ""}
+      </div>
 
       <div class="detail-row">
         <span class="detail">${escapeHtml(item.vibe)}</span>
         <span class="detail">${escapeHtml(getIntensityLabel(item.intensity))}</span>
         ${item.nostalgic ? `<span class="detail">Nostalgic</span>` : ""}
-        ${item.watched && item.rating !== null ? `<span class="rating-pill ${item.rating === 5 ? "perfect-score" : ""}">${escapeHtml(formatKisses(item.rating))}</span>` : `<span class="detail">${item.watched ? "Watched" : "Unwatched"}</span>`}
+        ${!item.watched ? `<span class="detail">Unwatched</span>` : ""}
       </div>
 
       <p><em>${escapeHtml(item.hint)}</em></p>
@@ -759,11 +803,6 @@ document.querySelectorAll("#statusTabs .top-tab").forEach(tab => {
     document.querySelectorAll("#statusTabs .top-tab").forEach(t => t.classList.remove("active"));
     tab.classList.add("active");
 
-    if (state.watchStatus === "watched" && state.sort === "date-desc") {
-      state.sort = "rating-desc";
-      sortSelect.value = "rating-desc";
-    }
-
     renderAll();
   });
 });
@@ -804,7 +843,7 @@ clearFiltersBtn.addEventListener("click", () => {
   state.intensity = "all";
   state.ratingFilter = "all";
   state.nostalgicOnly = false;
-  state.sort = state.watchStatus === "watched" ? "rating-desc" : "date-desc";
+  state.sort = "date-desc";
 
   searchInput.value = "";
   vibeSelect.value = "all";
@@ -827,11 +866,13 @@ movieTimeBtn.addEventListener("click", enterMovieTimeMode);
 featuredPrevBtn.addEventListener("click", () => {
   state.featuredIndex -= 1;
   renderFeatured();
+  startFeaturedAutoplay();
 });
 
 featuredNextBtn.addEventListener("click", () => {
   state.featuredIndex += 1;
   renderFeatured();
+  startFeaturedAutoplay();
 });
 
 featuredOpenBtnExternal.addEventListener("click", () => {
@@ -869,3 +910,5 @@ document.addEventListener("keydown", e => {
 });
 
 renderAll();
+
+startFeaturedAutoplay();
