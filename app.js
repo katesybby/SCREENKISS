@@ -330,7 +330,7 @@ function getVisibleItems() {
 
   return getBaseTypeItems()
     .filter(matchesWatchStatus)
-    .filter(item => state.vibe === "all" ? true : item.vibe === state.vibe)
+    .filter(item => state.vibe === "all" ? true : (item.filterTags || []).includes(state.vibe))
     .filter(item => state.intensity === "all" ? true : item.intensity === state.intensity)
     .filter(matchesRatingFilter)
     .filter(item => state.nostalgicOnly ? item.nostalgic === true : true)
@@ -378,12 +378,15 @@ function sortItems(items) {
 }
 
 function populateVibeSelect() {
-  const vibes = [...new Set(getBaseTypeItems().map(item => item.vibe))].sort((a, b) => a.localeCompare(b));
+  const tags = [...new Set(
+    getBaseTypeItems().flatMap(item => item.filterTags || [])
+  )].sort((a, b) => a.localeCompare(b));
+
   const currentValue = state.vibe;
 
   vibeSelect.innerHTML = `
     <option value="all">All vibes</option>
-    ${vibes.map(vibe => `<option value="${escapeHtml(vibe)}">${escapeHtml(vibe)}</option>`).join("")}
+    ${tags.map(tag => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`).join("")}
   `;
 
   if ([...vibeSelect.options].some(option => option.value === currentValue)) {
