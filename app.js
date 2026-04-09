@@ -396,6 +396,11 @@ function populateVibeSelect() {
 
 function getWatchUrl(item) {
   const query = encodeURIComponent(item.title);
+
+  if (item.type === "anime") {
+    return `https://9animetv.to/search?keyword=${query}`;
+  }
+
   return `https://theflixertv.to/search/${query}`;
 }
 
