@@ -93,6 +93,48 @@ function saveWatchlistState() {
   localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(WATCHLIST_STATE));
 }
 
+function normalizeTitle(title) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
+}
+function detectDuplicates(list) {
+  const seen = new Map();
+  const duplicates = [];
+
+  list.forEach(item => {
+    const key = `${normalizeTitle(item.title)}-${item.year}`;
+
+    if (seen.has(key)) {
+      duplicates.push({
+        existing: seen.get(key),
+        duplicate: item
+      });
+    } else {
+      seen.set(key, item);
+    }
+  });
+
+  if (duplicates.length > 0) {
+    console.warn("🚨 DUPLICATES FOUND:");
+    duplicates.forEach(d => {
+      console.warn(`Duplicate: ${d.duplicate.title} (${d.duplicate.year})`);
+    });
+  }
+}
+
+detectDuplicates(WATCHLIST_STATE);
+
+function isDuplicate(newItem, list) {
+  const newKey = `${normalizeTitle(newItem.title)}-${newItem.year}`;
+
+  return list.some(item => {
+    const key = `${normalizeTitle(item.title)}-${item.year}`;
+    return key === newKey;
+  });
+}
+
 function getItemById(id) {
   return WATCHLIST_STATE.find(item => item.id === id);
 }
