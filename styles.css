@@ -1,3 +1,5 @@
+/* STYLES.CSS */
+
 :root {
   --bg: #140811;
   --bg-2: #1e0b18;
@@ -764,11 +766,23 @@ html[data-theme="light"] .carousel-arrow {
 }
 
 .split-tabs {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 18px;
-  flex-wrap: wrap;
+}
+
+.tabs-left {
+  justify-self: start;
+}
+
+.tabs-center {
+  justify-self: center;
+}
+
+.tabs-right {
+  justify-self: end;
+  margin-left: 0;
 }
 
 .top-tabs {
@@ -872,7 +886,7 @@ html[data-theme="light"] .carousel-arrow {
 
 .controls-panel {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr auto auto;
+  grid-template-columns: minmax(260px, 1.7fr) auto 180px 180px 160px auto auto;
   gap: 14px;
   padding: 18px;
   border-radius: 26px;
@@ -1156,6 +1170,100 @@ html[data-theme="light"] .modal-close {
   flex-wrap: wrap;
 }
 
+.filter-chip-group-wrap {
+  min-width: 0;
+}
+
+.filter-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 48px;
+  align-content: flex-start;
+}
+
+.filter-chip {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.filter-chip.active-include {
+  background: rgba(255, 93, 177, 0.28);
+}
+
+.filter-chip.active-exclude {
+  background: rgba(255, 255, 255, 0.12);
+  text-decoration: line-through;
+}
+
+.filter-menu-wrap {
+  min-width: 0;
+}
+
+.filter-menu-shell {
+  position: relative;
+}
+
+.filter-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 50;
+  width: min(560px, 88vw);
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+}
+
+.filter-menu-note {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-bottom: 10px;
+}
+
+.filter-menu-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.filter-menu-option {
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 10px 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.filter-menu-option.state-include {
+  background: rgba(255, 93, 177, 0.20);
+}
+
+.filter-menu-option.state-exclude {
+  background: rgba(255,255,255,0.12);
+}
+
+.filter-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  margin-right: 8px;
+  font-size: 0.8rem;
+}
+
 @media (max-width: 1300px) {
   .controls-panel {
     grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr auto auto;
@@ -1237,14 +1345,28 @@ html[data-theme="light"] .modal-close {
     grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   }
 
-  .hero-topbar,
-  .split-tabs {
+  .hero-topbar {
     flex-direction: column;
     align-items: stretch;
   }
 
+  .split-tabs {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .tabs-left,
+  .tabs-center,
   .tabs-right {
-    margin-left: 0;
+    justify-self: start;
+  }
+
+  .controls-panel {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .control-actions {
+    grid-column: 1 / -1;
     justify-content: flex-start;
   }
 }

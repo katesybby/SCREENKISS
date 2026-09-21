@@ -1,12 +1,15 @@
+// APP.JS
+
 const state = {
-  type: "americano",
+  scope: "adult",
+  media: "all",
   watchStatus: "all",
   search: "",
-  vibe: "all",
+  tagStates: {},
   intensity: "all",
   ratingFilter: "all",
   nostalgicOnly: false,
-  sort: "date-desc",
+  sort: "random",
   theme: localStorage.getItem("screenkiss-theme") || "light",
   featuredIndex: 0,
   currentFeaturedItemId: null,
@@ -21,8 +24,8 @@ const POSTER_CACHE_KEY = "screenkiss-poster-cache-v1";
 const WATCHLIST_STORAGE_KEY = "screenkiss-watchlist-v1";
 
 // to reload the data.js file into screen kiss, take the 2 lines above and replace with this: 
-  // localStorage.removeItem("screenkiss-watchlist-v1");
-  // localStorage.removeItem("screenkiss-poster-cache-v1");
+  // localStorage.removeItem("screenkiss-watchlist-v1");     //this one for reloading everything
+  // localStorage.removeItem("screenkiss-poster-cache-v1");    //this one for reloading posters
   // location.reload();
 
 const storedWatchlist = localStorage.getItem(WATCHLIST_STORAGE_KEY);
@@ -63,8 +66,12 @@ const featuredOpenBtnExternal = document.getElementById("featuredOpenBtnExternal
 const featuredWatchBtnExternal = document.getElementById("featuredWatchBtnExternal");
 let featuredInterval = null;
 
+const scopeTabs = document.getElementById("scopeTabs");
+const mediaTabs = document.getElementById("mediaTabs");
+const filterMenuBtn = document.getElementById("filterMenuBtn");
+const filterMenu = document.getElementById("filterMenu");
+const filterMenuOptions = document.getElementById("filterMenuOptions");
 const searchInput = document.getElementById("searchInput");
-const vibeSelect = document.getElementById("vibeSelect");
 const intensitySelect = document.getElementById("intensitySelect");
 const sortSelect = document.getElementById("sortSelect");
 const ratingFilterSelect = document.getElementById("ratingFilterSelect");
@@ -88,6 +95,26 @@ const detailsModal = document.getElementById("detailsModal");
 const modalBackdrop = document.getElementById("modalBackdrop");
 const modalBody = document.getElementById("modalBody");
 const closeModalBtn = document.getElementById("closeModalBtn");
+
+const FILTER_OPTIONS = [
+  "dark",
+  "funny",
+  "love",
+  "scary",
+  "tense",
+  "mindfuck",
+  "girly",
+  "gay",
+  "period",
+  "crime",
+  "magic",
+  "space",
+  "coming-of-age",
+  "classic",
+  "nostalgia",
+  "light"
+];
+
 
 function saveWatchlistState() {
   localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(WATCHLIST_STATE));
@@ -153,6 +180,11 @@ function startFeaturedAutoplay() {
   }, 10000);
 }
 
+function getAvailableFilterTags() {
+  return [...new Set(
+    getBaseTypeItems().flatMap(item => item.filterTags || [])
+  )].sort((a, b) => a.localeCompare(b));
+}
 function escapeHtml(str) {
   return String(str ?? "")
     .replaceAll("&", "&amp;")
@@ -162,15 +194,26 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
-function getTypeLabel(type) {
-  return {
-    all: "All",
-    americano: "Movies + TV Shows",
-    movie: "Movies",
-    show: "TV Shows",
-    anime: "Anime"
-  }[type] || "Titles";
+function getTypeLabel() {
+  if (state.media === "movie") return "Movies";
+  if (state.media === "show") return "TV Shows";
+  if (state.media === "anime") return "Anime";
+
+  if (state.scope === "adult") return "Movies + TV Shows";
+  if (state.scope === "fluffy") return "Fluffy";
+  return "All";
 }
+
+function auditIntensityValues(list) {
+  const counts = {};
+  list.forEach(item => {
+    const key = (item.intensity || "MISSING").toLowerCase().trim();
+    counts[key] = (counts[key] || 0) + 1;
+  });
+  console.log("Intensity audit:", counts);
+}
+
+auditIntensityValues(WATCHLIST_STATE);
 
 function formatKisses(rating) {
   if (rating === null || rating === undefined) return "No kisses yet";
@@ -341,16 +384,32 @@ function enterMovieTimeMode() {
   triggerMovieModeAnimation();
 }
 
-function getBaseTypeItems() {
-  if (state.type === "all") {
+function getScopedItems() {
+  if (state.scope === "all") {
     return WATCHLIST_STATE;
   }
 
-  if (state.type === "americano") {
+  if (state.scope === "adult") {
     return WATCHLIST_STATE.filter(item => item.type === "movie" || item.type === "show");
   }
 
-  return WATCHLIST_STATE.filter(item => item.type === state.type);
+  if (state.scope === "fluffy") {
+    return WATCHLIST_STATE.filter(item => {
+      const tags = item.filterTags || [];
+      const hasLight = tags.includes("light") || (item.intensity || "").toLowerCase().trim() === "glossy";
+      const harsh = tags.some(tag => ["scary", "tense", "crime", "mindfuck"].includes(tag));
+      return hasLight && !harsh;
+    });
+  }
+
+  return WATCHLIST_STATE;
+}
+
+function getBaseTypeItems() {
+  const scoped = getScopedItems();
+
+  if (state.media === "all") return scoped;
+  return scoped.filter(item => item.type === state.media);
 }
 
 function matchesWatchStatus(item) {
@@ -370,10 +429,26 @@ function matchesRatingFilter(item) {
 function getVisibleItems() {
   const q = state.search.toLowerCase().trim();
 
+  const includeTags = Object.entries(state.tagStates)
+    .filter(([, value]) => value === 1)
+    .map(([tag]) => tag);
+
+  const excludeTags = Object.entries(state.tagStates)
+    .filter(([, value]) => value === -1)
+    .map(([tag]) => tag);
+
   return getBaseTypeItems()
     .filter(matchesWatchStatus)
-    .filter(item => state.vibe === "all" ? true : (item.filterTags || []).includes(state.vibe))
-    .filter(item => state.intensity === "all" ? true : item.intensity === state.intensity)
+    .filter(item => {
+      const tags = item.filterTags || [];
+      const includesOk = includeTags.length === 0 || includeTags.every(tag => tags.includes(tag));
+      const excludesOk = excludeTags.length === 0 || !excludeTags.some(tag => tags.includes(tag));
+      return includesOk && excludesOk;
+    })
+    .filter(item => {
+      if (state.intensity === "all") return true;
+      return (item.intensity || "").toLowerCase().trim() === state.intensity;
+    })
     .filter(matchesRatingFilter)
     .filter(item => state.nostalgicOnly ? item.nostalgic === true : true)
     .filter(item => {
@@ -388,6 +463,35 @@ function getVisibleItems() {
     });
 }
 
+function cycleTagState(tag) {
+  const current = state.tagStates[tag] || 0;
+
+  if (current === 0) state.tagStates[tag] = 1;
+  else if (current === 1) state.tagStates[tag] = -1;
+  else delete state.tagStates[tag];
+}
+
+function renderFilterMenu() {
+  filterMenuOptions.innerHTML = FILTER_OPTIONS.map(tag => {
+    const value = state.tagStates[tag] || 0;
+    const cls = value === 1 ? "state-include" : value === -1 ? "state-exclude" : "";
+    const mark = value === 1 ? "✓" : value === -1 ? "✕" : "";
+
+    return `
+      <button class="filter-menu-option ${cls}" data-tag="${escapeHtml(tag)}" type="button">
+        <span class="filter-box">${mark}</span>${escapeHtml(tag)}
+      </button>
+    `;
+  }).join("");
+
+  filterMenuOptions.querySelectorAll(".filter-menu-option").forEach(btn => {
+    btn.addEventListener("click", () => {
+      cycleTagState(btn.dataset.tag);
+      renderFilterMenu();
+      renderCards();
+    });
+  });
+}
 function sortItems(items) {
   const sorted = [...items];
 
@@ -417,26 +521,6 @@ function sortItems(items) {
   }
 
   return sorted;
-}
-
-function populateVibeSelect() {
-  const tags = [...new Set(
-    getBaseTypeItems().flatMap(item => item.filterTags || [])
-  )].sort((a, b) => a.localeCompare(b));
-
-  const currentValue = state.vibe;
-
-  vibeSelect.innerHTML = `
-    <option value="all">All vibes</option>
-    ${tags.map(tag => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`).join("")}
-  `;
-
-  if ([...vibeSelect.options].some(option => option.value === currentValue)) {
-    vibeSelect.value = currentValue;
-  } else {
-    state.vibe = "all";
-    vibeSelect.value = "all";
-  }
 }
 
 function getWatchUrl(item) {
@@ -501,10 +585,10 @@ function renderFeatured() {
 function renderCards() {
   const visibleItems = sortItems(getVisibleItems());
 
-  const typeLabel = getTypeLabel(state.type);
-  const statusLabel = { watched: "Watched", unwatched: "Unwatched", all: "All" }[state.watchStatus];
+  const typeLabel = getTypeLabel();
+  const statusLabel = { watched: "Watched", unwatched: "Unwatched", all: "" }[state.watchStatus];
 
-  resultsTitle.textContent = `${statusLabel} ${typeLabel}`;
+  resultsTitle.textContent = statusLabel ? `${statusLabel} ${typeLabel}` : typeLabel;
   resultsMeta.textContent = `${visibleItems.length} title${visibleItems.length === 1 ? "" : "s"}`;
 
   if (!visibleItems.length) {
@@ -832,16 +916,39 @@ function closeModal() {
 
 function renderAll() {
   applyTheme();
-  populateVibeSelect();
+  sortSelect.value = state.sort;
+  renderFilterMenu();
   renderFeatured();
   renderRankingSidebar();
   renderCards();
 }
 
-document.querySelectorAll("#typeTabs .top-tab").forEach(tab => {
+// EVENT LISTERNERS
+
+document.querySelectorAll("#scopeTabs .top-tab").forEach(tab => {
   tab.addEventListener("click", () => {
-    state.type = tab.dataset.type;
-    document.querySelectorAll("#typeTabs .top-tab").forEach(t => t.classList.remove("active"));
+    state.scope = tab.dataset.scope;
+    document.querySelectorAll("#scopeTabs .top-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    renderAll();
+  });
+});
+
+filterMenuBtn.addEventListener("click", () => {
+  filterMenu.classList.toggle("hidden");
+});
+
+document.addEventListener("click", (e) => {
+  const clickedInside = filterMenu.contains(e.target) || filterMenuBtn.contains(e.target);
+  if (!clickedInside) {
+    filterMenu.classList.add("hidden");
+  }
+});
+
+document.querySelectorAll("#mediaTabs .top-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    state.media = tab.dataset.media;
+    document.querySelectorAll("#mediaTabs .top-tab").forEach(t => t.classList.remove("active"));
     tab.classList.add("active");
     renderAll();
   });
@@ -859,11 +966,6 @@ document.querySelectorAll("#statusTabs .top-tab").forEach(tab => {
 
 searchInput.addEventListener("input", e => {
   state.search = e.target.value;
-  renderCards();
-});
-
-vibeSelect.addEventListener("change", e => {
-  state.vibe = e.target.value;
   renderCards();
 });
 
@@ -889,18 +991,17 @@ nostalgicToggle.addEventListener("change", e => {
 
 clearFiltersBtn.addEventListener("click", () => {
   state.search = "";
-  state.vibe = "all";
+  state.tagStates = {};
   state.intensity = "all";
   state.ratingFilter = "all";
   state.nostalgicOnly = false;
-  state.sort = "date-desc";
+  state.sort = "random";
 
   searchInput.value = "";
-  vibeSelect.value = "all";
   intensitySelect.value = "all";
   ratingFilterSelect.value = "all";
   nostalgicToggle.checked = false;
-  sortSelect.value = state.sort;
+  sortSelect.value = "random";
 
   renderAll();
 });
